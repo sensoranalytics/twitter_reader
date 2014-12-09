@@ -35,7 +35,7 @@ class GetMentions(object):
         try:
             verified = self.api.verify_credentials()
         except TweepError, errors:
-            # client.captureException()
+            client.captureException()
             for msg in errors.message:
                 # If Rate limit exceeded, will retry after 15 minutes
                 if msg['code'] == 88:
@@ -54,7 +54,7 @@ class GetMentions(object):
             print "Fetching mentions"
             mentions = self.api.mentions_timeline(count=count, since_id=self.since_id)
         except TweepError, errors:
-            # client.captureException()
+            client.captureException()
             for msg in errors.message:
                 # If Rate limit exceeded, will retry after 15 minutes
                 if msg['code'] == 88:
