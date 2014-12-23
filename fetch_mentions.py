@@ -7,7 +7,7 @@ from tweepy.error import TweepError
 from raven import Client
 
 from settings import consumer_key, consumer_secret, key, secret, count, pubKey, payload_type, SENTRY_DSN,\
-    overlap_count, waiting_period, url, password, timeout, ssl_verification
+    overlap_count, waiting_period, speed_layer_endpoint_url, password, timeout, ssl_verification
 
 client = Client(SENTRY_DSN)
 
@@ -75,7 +75,7 @@ class GetMentions(object):
                               "transactionData": mention._json})
             print "--------- Sending to Rest End point ---------"
             try:
-                resp = requests.post(url, auth=(pubKey, password), headers=self.headers, timeout=timeout,
+                resp = requests.post(speed_layer_endpoint_url, auth=(pubKey, password), headers=self.headers, timeout=timeout,
                                      data=json.dumps(self.data), verify=ssl_verification)
             except Exception as e:
                 print 'Failed to post to HTTP endpoint due to "%s"' % e.message
