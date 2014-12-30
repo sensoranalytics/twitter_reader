@@ -13,7 +13,7 @@ client = Client(SENTRY_DSN)
 
 
 class GetMentions(object):
-    latest_tweet_id = 0
+    latest_tweet_id = 1
     since_id = 1
     api = None
     data = {"payloadType": payload_type, "pubKey": pubKey}
