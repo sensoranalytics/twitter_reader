@@ -61,7 +61,8 @@ class GetMentions(object):
                     print "Sleeping for 15 minutes, Rate limit hit"
                     time.sleep(15 * 60)
                     break
-            return None
+                print msg
+            return []
         else:
             return mentions
 
