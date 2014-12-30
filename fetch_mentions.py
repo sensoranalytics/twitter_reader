@@ -7,13 +7,13 @@ from tweepy.error import TweepError
 from raven import Client
 
 from settings import consumer_key, consumer_secret, key, secret, count, pubKey, payload_type, SENTRY_DSN,\
-    overlap_count, waiting_period, url, password, timeout, ssl_verification
+    overlap_count, waiting_period, speed_layer_endpoint_url, password, timeout, ssl_verification
 
 client = Client(SENTRY_DSN)
 
 
 class GetMentions(object):
-    latest_tweet_id = 0
+    latest_tweet_id = 1
     since_id = 1
     api = None
     data = {"payloadType": payload_type, "pubKey": pubKey}
@@ -61,7 +61,8 @@ class GetMentions(object):
                     print "Sleeping for 15 minutes, Rate limit hit"
                     time.sleep(15 * 60)
                     break
-            return None
+                print msg
+            return []
         else:
             return mentions
 
@@ -75,7 +76,7 @@ class GetMentions(object):
                               "transactionData": mention._json})
             print "--------- Sending to Rest End point ---------"
             try:
-                resp = requests.post(url, auth=(pubKey, password), headers=self.headers, timeout=timeout,
+                resp = requests.post(speed_layer_endpoint_url, auth=(pubKey, password), headers=self.headers, timeout=timeout,
                                      data=json.dumps(self.data), verify=ssl_verification)
             except Exception as e:
                 print 'Failed to post to HTTP endpoint due to "%s"' % e.message
