@@ -1,13 +1,15 @@
 import time
 import requests
 import json
+from datetime import datetime
 
 import tweepy
 from tweepy.error import TweepError
 from raven import Client
 
 from settings import consumer_key, consumer_secret, key, secret, count, pubKey, payload_type, SENTRY_DSN,\
-    overlap_count, waiting_period, url, password, timeout, ssl_verification
+    overlap_count, waiting_period, speed_layer_endpoint_url, password, timeout, ssl_verification,\
+    twitter_app_name, twitter_app_id, instance_id
 
 client = Client(SENTRY_DSN)
 
@@ -19,6 +21,8 @@ class GetMentions(object):
     data = {"payloadType": payload_type, "pubKey": pubKey}
     overlap_count = overlap_count
     headers = {'content-type': 'application/json'}
+    query_data = {"type": "get_mentions"}
+    sensor = {"appName": twitter_app_name, "appId": twitter_app_id, "instanceId": instance_id}
 
     def authenticate(self):
         """
@@ -26,24 +30,21 @@ class GetMentions(object):
         """
         auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
         auth.set_access_token(key, secret)
-        self.api = tweepy.API(auth)
+        self.api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
 
     def verify_credentials(self):
         """
         Return after Verifying twitter credentials
         """
+        print "Verifying twitter auth"
         try:
             verified = self.api.verify_credentials()
         except TweepError, errors:
             client.captureException()
-            for msg in errors.message:
-                # If Rate limit exceeded, will retry after 15 minutes
-                if msg['code'] == 88:
-                    print "Sleeping for 15 minutes, Rate limit hit"
-                    time.sleep(15 * 60)
-                    return True
+            print errors.message
             return False
         else:
+            self.sensor.update({"appAccount": verified.screen_name})
             return verified
 
     def get_mentions(self):
@@ -52,16 +53,13 @@ class GetMentions(object):
         """
         try:
             print "Fetching mentions"
+            self.query_data.update({"dateTime": datetime.utcnow().isoformat()})
             mentions = self.api.mentions_timeline(count=count, since_id=self.since_id)
+            self.query_data.update({"argument": {"count": count, "since_id": self.since_id}})
         except TweepError, errors:
             client.captureException()
-            for msg in errors.message:
-                # If Rate limit exceeded, will retry after 15 minutes
-                if msg['code'] == 88:
-                    print "Sleeping for 15 minutes, Rate limit hit"
-                    time.sleep(15 * 60)
-                    break
-            return None
+            print errors.message
+            return []
         else:
             return mentions
 
@@ -69,11 +67,17 @@ class GetMentions(object):
         """
         Send the twitter mentions to rest end point server
         """
+        transaction_data = {}
+        transaction_data['sensor'] = self.sensor
         mentions = self.get_mentions()
         for mention in mentions:
+            transaction_data['rawData'] = mention._json
+            transaction_data['query'] = self.query_data
             self.data.update({"transactionId": mention.id, "transactionSent": mention.created_at.isoformat(),
-                              "transactionData": mention._json})
+                              "transactionData": transaction_data})
             print "--------- Sending to Rest End point ---------"
+            print json.dumps(self.data)
+            print "---------------------------------------------"
             try:
                 resp = requests.post(url, auth=(pubKey, password), headers=self.headers, timeout=timeout,
                                      data=json.dumps(self.data), verify=ssl_verification)
