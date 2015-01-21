@@ -9,8 +9,8 @@ secret = "%TWITTER_READER_SECRET%"
 # Name of the Twitter app, as registered with Twitter
 twitter_app_name = "%TWITTER_APP_NAME%"
 # Numeric ID registered with twitter
-twitter_app_id = "%TWITTER_APP_NAME%"
-# Unique identifier of this instance of the sensor (Docker ID and PID?)
+twitter_app_id = "%TWITTER_APP_ID%"
+# Unique identifier of this instance of the sensor (Container ID)
 instance_id = "%INSTANCE_ID%"
 
 # Speed Layer EndPoint url
