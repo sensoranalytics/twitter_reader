@@ -15,7 +15,7 @@ client = Client(SENTRY_DSN)
 
 
 class GetMentions(object):
-    latest_tweet_id = 0
+    latest_tweet_id = 1
     since_id = 1
     api = None
     data = {"payloadType": payload_type, "pubKey": pubKey}
@@ -36,7 +36,7 @@ class GetMentions(object):
         """
         Return after Verifying twitter credentials
         """
-        print "Verifying twitter auth"
+        print "Verifying twitter account"
         try:
             verified = self.api.verify_credentials()
         except TweepError, errors:
@@ -45,7 +45,7 @@ class GetMentions(object):
             return False
         else:
             self.sensor.update({"appAccount": verified.screen_name})
-            return verified
+            return True
 
     def get_mentions(self):
         """
@@ -69,17 +69,15 @@ class GetMentions(object):
         """
         transaction_data = {}
         transaction_data['sensor'] = self.sensor
+        transaction_data['query'] = self.query_data
         mentions = self.get_mentions()
         for mention in mentions:
             transaction_data['rawData'] = mention._json
-            transaction_data['query'] = self.query_data
             self.data.update({"transactionId": mention.id, "transactionSent": mention.created_at.isoformat(),
                               "transactionData": transaction_data})
             print "--------- Sending to Rest End point ---------"
-            print json.dumps(self.data)
-            print "---------------------------------------------"
             try:
-                resp = requests.post(url, auth=(pubKey, password), headers=self.headers, timeout=timeout,
+                resp = requests.post(speed_layer_endpoint_url, auth=(pubKey, password), headers=self.headers, timeout=timeout,
                                      data=json.dumps(self.data), verify=ssl_verification)
             except Exception as e:
                 print 'Failed to post to HTTP endpoint due to "%s"' % e.message
